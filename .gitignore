@@ -31,24 +31,59 @@
 *.out
 *.app
 
+# IDE Settings
+.idea/
+*.ipr
+*.iws
+*.iml
 *.xcuserstate
-Debug
-Release
-Debug64
-Release64
 
-*.opendb
-*.db
-*.suo
-
+# Visual Studio
 plugin/Builds/VisualStudio2017/x64
 plugin/Builds/VisualStudio2017/Win32
 plugin/Builds/VisualStudio2017/.vs
 
-xcuserdata
+# Build directories
+Debug
+Release
+Debug64
+Release64
+plugin/Builds
 Builds
+
+# JUCE
 JuceLibraryCode
+*.jucer
+*Project.jucer
+
+# Binary artifacts
+*.binarydata.cpp
+*.binarydata.h
+*binarydata.cpp
+*binarydata.h
+
+# Binaries
 bin
 Installer/macOS/bin
 Installer/win/bin
 Installer/_flat_presets
+
+# CMake build directories (CLion)
+cmake-build-*/
+cmake-build-*/.ninja_deps
+cmake-build-*/.ninja_log
+cmake-build-*/build.ninja
+cmake-build-*/cmake_install.cmake
+cmake-build-*/CMakeCache.txt
+cmake-build-*/compile_commands.json
+cmake-build-*/CPackConfig.cmake
+cmake-build-*/CPackSourceConfig.cmake
+cmake-build-*/CMakeFiles/
+cmake-build-*/Testing/
+cmake-build-*/juce_binarydata_*/
+cmake-build-*/modules/
+cmake-build-*/SID_artefacts/
+cmake-build-*/vst3_helpers/
+
+# User data and preferences
+xcuserdata

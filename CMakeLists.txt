@@ -53,10 +53,11 @@ if(APPLE)
 	set (CMAKE_OSX_ARCHITECTURES arm64 x86_64)
 endif()
 
-if (WIN32)
-	set (FORMATS Standalone VST VST3 LV2)
-else()
+# AU is an Objective-C++ / macOS-only format; only request it on Apple.
+if (APPLE)
 	set (FORMATS Standalone VST VST3 AU LV2)
+else()
+	set (FORMATS Standalone VST VST3 LV2)
 endif()
 
 set_property (GLOBAL PROPERTY USE_FOLDERS YES)
@@ -177,7 +178,6 @@ juce_generate_juce_header (${PLUGIN_NAME})
 
 target_compile_definitions (${PLUGIN_NAME} PRIVATE
 								JUCE_DISPLAY_SPLASH_SCREEN=0
-								JUCE_COREGRAPHICS_DRAW_ASYNC=1
 								JUCE_MODAL_LOOPS_PERMITTED=1
 								JUCE_WEB_BROWSER=0
 								JUCE_USE_FLAC=0
@@ -191,6 +191,8 @@ target_compile_definitions (${PLUGIN_NAME} PRIVATE
 							)
 
 if (APPLE)
+	target_compile_definitions (${PLUGIN_NAME} PRIVATE JUCE_COREGRAPHICS_DRAW_ASYNC=1)
+
     foreach(t ${FORMATS} "Assets" "All" "")
         set(tgt ${CMAKE_PROJECT_NAME})
         if (NOT t STREQUAL "")
