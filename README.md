@@ -115,3 +115,7 @@ This project is licensed under the terms found in the LICENSE file.
 ## Author
 
 SocaLabs - https://socalabs.com/
+
+## Disclaimer
+
+This repo (fork) is developed with help from AI tools.
