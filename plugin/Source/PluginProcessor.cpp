@@ -53,6 +53,7 @@ void SIDEngine::runUntil (int& done, juce::AudioSampleBuffer& buffer, int pos)
             short out[1024];
             int count = sid.clock (clock, out, std::min (todo, 1024));
 
+            // Write to first output channel only (mono output)
             float* data = buffer.getWritePointer (0, done);
             for (int i = 0; i < count; i++)
                 data[i] += out[i] / 32768.0f;
@@ -604,7 +605,7 @@ static void launchCrashReporterOnce()
 }
 
 SIDAudioProcessor::SIDAudioProcessor()
-    : gin::Processor (false, createProcessorOptions())
+    : gin::Processor (BusesProperties().withOutput ("Output", AudioChannelSet::mono(), true), false, createProcessorOptions())
 {
     launchCrashReporterOnce();
 
