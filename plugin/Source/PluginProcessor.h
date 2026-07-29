@@ -14,8 +14,24 @@
 
 // Support both resid-0.16 (global namespace) and resid-1.0 (namespace reSID)
 #if defined(USE_RESID_1_0)
-    #include "3rdparty/resid-1.0/vice/src/resid/sid.h"
-    using SID = reSID::SID;
+    #include "3rdparty/resid-1.0/resid_wrapper.h"
+    // Re-export types from resid1 namespace for use in plugin code
+    using chip_model = resid1::chip_model;
+    using sampling_method = resid1::sampling_method;
+    using reg4 = resid1::reg4;
+    using reg8 = resid1::reg8;
+    using reg12 = resid1::reg12;
+    using reg16 = resid1::reg16;
+    using reg24 = resid1::reg24;
+    using cycle_count = resid1::cycle_count;
+    using SID = resid1::SID;
+    // Enum values as constexpr for backward compatibility
+    constexpr chip_model MOS6581 = resid1::MOS6581;
+    constexpr chip_model MOS8580 = resid1::MOS8580;
+    constexpr sampling_method SAMPLE_FAST = resid1::SAMPLE_FAST;
+    constexpr sampling_method SAMPLE_INTERPOLATE = resid1::SAMPLE_INTERPOLATE;
+    constexpr sampling_method SAMPLE_RESAMPLE = resid1::SAMPLE_RESAMPLE;
+    constexpr sampling_method SAMPLE_RESAMPLE_FASTMEM = resid1::SAMPLE_RESAMPLE_FASTMEM;
 #else
     #include "3rdparty/resid-0.16/sid.h"
 #endif

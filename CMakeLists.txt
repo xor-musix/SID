@@ -103,8 +103,10 @@ set_target_properties(${PLUGIN_NAME}_Assets PROPERTIES UNITY_BUILD ON UNITY_BUIL
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Add resid-1.0 library from submodule
-add_subdirectory(plugin/Source/3rdparty/resid-1.0)
+# Add resid-1.0 library from submodule (only when USE_RESID_1_0 is enabled)
+if (USE_RESID_1_0)
+    add_subdirectory(plugin/Source/3rdparty/resid-1.0)
+endif()
 
 juce_set_vst2_sdk_path (${CMAKE_SOURCE_DIR}/modules/plugin_sdk/vstsdk2.4)
 
@@ -183,6 +185,9 @@ target_link_libraries (${PLUGIN_NAME} PRIVATE
 if (USE_RESID_1_0)
     target_link_libraries (${PLUGIN_NAME} PRIVATE resid-1.0)
     target_compile_definitions (${PLUGIN_NAME} PRIVATE USE_RESID_1_0)
+    # Add resid-1.0 source directory for includes from resid_wrapper.h
+    target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-1.0/vice-git/vice/src/resid)
+    target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/plugin/Source/3rdparty/resid-1.0/generated)
 else()
     # resid-0.16 sources are included directly via GLOB_RECURSE
     target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-0.16)
