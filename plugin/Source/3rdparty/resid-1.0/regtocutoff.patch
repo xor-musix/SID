@@ -1,0 +1,94 @@
+From: Cline <cline@xor-musix.dev>
+Date: Sat, 29 Jul 2026 23:40:00 +0200
+Subject: [PATCH] Add regToCutoff() method for resid-0.16 compatibility
+
+This adds the regToCutoff() method that was removed in resid-1.0 but is
+still used by the SID plugin codebase. The method converts FC register
+values to cutoff frequency in Hz.
+
+Signed-off-by: Cline <cline@xor-musix.dev>
+---
+ resid/filter.cc | 16 ++++++++++++++++
+ resid/filter.h  |  4 ++++
+ resid/sid.cc    |  7 +++++++
+ resid/sid.h     |  4 ++++
+ 4 files changed, 31 insertions(+)
+
+diff --git a/resid/filter.cc b/resid/filter.cc
+index 419d7fd784..207dad9f9e 100644
+--- a/resid/filter.cc
++++ b/resid/filter.cc
+@@ -683,4 +683,20 @@ void Filter::set_sum_mix()
+         & voice_mask;
+ }
+
++// Convert FC register value to cutoff frequency (Hz).
++// resid-0.16 compatibility method.
++// This returns the cutoff frequency in Hz for a given 11-bit FC register value.
++int Filter::regToCutoff(reg16 val)
++{
++    // Clamp val to 11 bits (0-2047)
++    int index = val & 0x7ff;
++    model_filter_t& f = model_filter[sid_model];
++    // Return the pre-computed cutoff frequency from the lookup table
++    // The f0_dac table contains values scaled to 16-bit range, which corresponds
++    // to cutoff frequency in Hz for the 6581/8580 chips.
++    // For 6581: 220Hz - 18kHz range
++    // For 8580: 30Hz - 12kHz range
++    return f.f0_dac[index];
++}
++
+ } // namespace reSID
+diff --git a/resid/filter.h b/resid/filter.h
+index 15ac39e11e..980d9154b7 100644
+--- a/resid/filter.h
++++ b/resid/filter.h
+@@ -369,6 +369,10 @@ public:
+   // SID audio output (16 bits).
+   short output();
+
++  // Convert FC register value to cutoff frequency (Hz).
++  // resid-0.16 compatibility method.
++  int regToCutoff(reg16 val);
++
+ protected:
+   void set_sum_mix();
+   void set_w0();
+diff --git a/resid/sid.cc b/resid/sid.cc
+index cf90da66a6..df73ae1e53 100644
+--- a/resid/sid.cc
++++ b/resid/sid.cc
+@@ -1081,7 +1081,14 @@ int SID::clock_resample_fastmem(cycle_count& delta_t, short* buf, int n, int int
+     buf[s*interleave] = amplify(v, scaleFactor);
+   }
+
+-  return s;
++   return s;
++}
++
++// Convert FC register value to cutoff frequency (Hz).
++// resid-0.16 compatibility method.
++int SID::regToCutoff(reg16 val)
++{
++    return filter.regToCutoff(val);
+ }
+ 
+ } // namespace reSID
+diff --git a/resid/sid.h b/resid/sid.h
+index 5d2c7309b1..6646de7de5 100644
+--- a/resid/sid.h
++++ b/resid/sid.h
+@@ -103,6 +103,10 @@ public:
+
+   void debugoutput(void);
+
++  // Convert FC register value to cutoff frequency (Hz).
++  // resid-0.16 compatibility method.
++  int regToCutoff(reg16 val);
++
+  protected:
+   static double I0(double x);
+   int clock_fast(cycle_count& delta_t, short* buf, int n, int interleave);
+
+--
+2.45.0

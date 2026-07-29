@@ -112,4 +112,13 @@ namespace resid1
     static constexpr sampling_method SAMPLE_RESAMPLE = reSID::SAMPLE_RESAMPLE;
     static constexpr sampling_method SAMPLE_RESAMPLE_FASTMEM = reSID::SAMPLE_RESAMPLE_FASTMEM;
 
+    // regToCutoff compatibility method
+    // resid-0.16 had SID::regToCutoff(reg16 val) which returned cutoff frequency in Hz
+    // reSID 1.0 now has SID::regToCutoff(reg16 val) which delegates to Filter::regToCutoff
+    // This wrapper simply forwards the call to the SID class method
+    inline int regToCutoff(SID& sid, reg16 val)
+    {
+        return sid.regToCutoff(val);
+    }
+
 } // namespace resid1
