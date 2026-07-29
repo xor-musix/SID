@@ -10,8 +10,15 @@
 
 #pragma once
 
-#include <JuceHeader.h>
-#include "3rdparty/resid-0.16/sid.h"
+#include <JuceHeader>
+
+// Support both resid-0.16 (global namespace) and resid-1.0 (namespace reSID)
+#if defined(USE_RESID_1.0)
+    #include "3rdparty/resid-1.0/vice/src/resid/sid.h"
+    using SID = reSID::SID;
+#else
+    #include "3rdparty/resid-0.16/sid.h"
+#endif
 
 //==============================================================================
 class SIDAudioProcessor;
