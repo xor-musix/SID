@@ -10,10 +10,10 @@
 
 #pragma once
 
-#include <JuceHeader>
+#include <JuceHeader.h>
 
 // Support both resid-0.16 (global namespace) and resid-1.0 (namespace reSID)
-#if defined(USE_RESID_1.0)
+#if defined(USE_RESID_1_0)
     #include "3rdparty/resid-1.0/vice/src/resid/sid.h"
     using SID = reSID::SID;
 #else

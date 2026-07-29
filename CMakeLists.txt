@@ -138,7 +138,7 @@ file (GLOB_RECURSE source_files CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin/*.h)
 
 # Exclude files from resid-1.0 submodule (VICE)
-list(FILTER source_files EXCLUDE REGEX "resid-1.0/vice/")
+list(FILTER source_files EXCLUDE REGEX "resid-1.0/vice-git/vice/")
 
 target_sources (${PLUGIN_NAME} PRIVATE ${source_files})
 source_group (TREE ${CMAKE_CURRENT_SOURCE_DIR}/plugin PREFIX Source FILES ${source_files})
@@ -150,7 +150,7 @@ target_sources (${PLUGIN_NAME} PRIVATE ${asset_files})
 source_group (TREE ${CMAKE_CURRENT_SOURCE_DIR}/Assets PREFIX Assets FILES ${asset_files})
 
 # Option to use resid-1.0 instead of resid-0.16
-option(USE_RESID_1.0 "Use resid-1.0 instead of resid-0.16" OFF)
+option(USE_RESID_1_0 "Use resid-1.0 instead of resid-0.16" OFF)
 
 target_link_libraries (${PLUGIN_NAME} PRIVATE
 						${PLUGIN_NAME}_Assets
@@ -180,9 +180,9 @@ target_link_libraries (${PLUGIN_NAME} PRIVATE
 					)
 
 # Add resid-1.0 library if enabled
-if (USE_RESID_1.0)
+if (USE_RESID_1_0)
     target_link_libraries (${PLUGIN_NAME} PRIVATE resid-1.0)
-    target_compile_definitions (${PLUGIN_NAME} PRIVATE USE_RESID_1.0)
+    target_compile_definitions (${PLUGIN_NAME} PRIVATE USE_RESID_1_0)
 else()
     # resid-0.16 sources are included directly via GLOB_RECURSE
     target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-0.16)
