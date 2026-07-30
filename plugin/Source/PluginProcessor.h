@@ -34,6 +34,23 @@
     constexpr sampling_method SAMPLE_RESAMPLE_FASTMEM = resid1::SAMPLE_RESAMPLE_FASTMEM;
 #else
     #include "3rdparty/resid-0.16/sid.h"
+    // resid-0.16 uses global namespace - re-export for compatibility
+    using chip_model = ::chip_model;
+    using sampling_method = ::sampling_method;
+    using reg4 = ::reg4;
+    using reg8 = ::reg8;
+    using reg12 = ::reg12;
+    using reg16 = ::reg16;
+    using reg24 = ::reg24;
+    using cycle_count = ::cycle_count;
+    using SID = ::SID;
+    // Enum values as constexpr for backward compatibility
+    constexpr chip_model MOS6581 = ::MOS6581;
+    constexpr chip_model MOS8580 = ::MOS8580;
+    constexpr sampling_method SAMPLE_FAST = ::SAMPLE_FAST;
+    constexpr sampling_method SAMPLE_INTERPOLATE = ::SAMPLE_INTERPOLATE;
+    constexpr sampling_method SAMPLE_RESAMPLE = ::SAMPLE_RESAMPLE;
+    constexpr sampling_method SAMPLE_RESAMPLE_FASTMEM = ::SAMPLE_RESAMPLE_INTERPOLATE;
 #endif
 
 //==============================================================================
@@ -84,6 +101,9 @@ public:
     //==============================================================================
     juce::File getProgramDirectory() override;
     juce::Array<juce::File> getFactoryProgramDirectories() override;
+
+    // Get the reSID version string
+    juce::String getResidVersion() const;
 
     SIDAudioProcessor();
     ~SIDAudioProcessor() override;
@@ -159,4 +179,5 @@ private:
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SIDAudioProcessor)
+
 };

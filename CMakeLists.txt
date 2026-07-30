@@ -103,6 +103,9 @@ set_target_properties(${PLUGIN_NAME}_Assets PROPERTIES UNITY_BUILD ON UNITY_BUIL
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Option to use resid-1.0 instead of resid-0.16
+option(USE_RESID_1_0 "Use resid-1.0 instead of resid-0.16" OFF)
+
 # Add resid-1.0 library from submodule (only when USE_RESID_1_0 is enabled)
 if (USE_RESID_1_0)
     add_subdirectory(plugin/Source/3rdparty/resid-1.0)
@@ -151,9 +154,6 @@ file (GLOB_RECURSE asset_files CONFIGURE_DEPENDS
 target_sources (${PLUGIN_NAME} PRIVATE ${asset_files})
 source_group (TREE ${CMAKE_CURRENT_SOURCE_DIR}/Assets PREFIX Assets FILES ${asset_files})
 
-# Option to use resid-1.0 instead of resid-0.16
-option(USE_RESID_1_0 "Use resid-1.0 instead of resid-0.16" OFF)
-
 target_link_libraries (${PLUGIN_NAME} PRIVATE
 						${PLUGIN_NAME}_Assets
 
@@ -181,15 +181,15 @@ target_link_libraries (${PLUGIN_NAME} PRIVATE
     					juce::juce_recommended_config_flags
 					)
 
-# Add resid-1.0 library if enabled
+# Add resid library (0.16 or 1.0) based on option
 if (USE_RESID_1_0)
     target_link_libraries (${PLUGIN_NAME} PRIVATE resid-1.0)
     target_compile_definitions (${PLUGIN_NAME} PRIVATE USE_RESID_1_0)
-    # Add resid-1.0 source directory for includes from resid_wrapper.h
-    target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-1.0/vice-git/vice/src/resid)
+    # Add resid-1.0 build source directory FIRST (for patched headers), then generated directory
+    target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/plugin/Source/3rdparty/resid-1.0/resid-1.0/build-src/vice/src/resid)
     target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/plugin/Source/3rdparty/resid-1.0/generated)
 else()
-    # resid-0.16 sources are included directly via GLOB_RECURSE
+    # resid-0.16 sources are included directly
     target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-0.16)
 endif()
 

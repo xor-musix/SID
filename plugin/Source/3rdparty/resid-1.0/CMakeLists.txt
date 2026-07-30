@@ -94,11 +94,14 @@ endforeach()
 # Copy helper script
 configure_file(${RESID_SOURCE_DIR}/samp2src.pl ${RESID_BUILD_SRC_DIR}/samp2src.pl COPYONLY)
 
-# Apply the regToCutoff patch for resid-0.16 compatibility
-set(PATCH_FILE ${CMAKE_CURRENT_SOURCE_DIR}/regtocutoff.patch)
-set(WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}/resid-1.0/build-src/vice/src)
-if(EXISTS ${PATCH_FILE})
-    message(STATUS "Applying regToCutoff patch to resid-1.0 build sources")
+# Function to apply a patch file
+function(apply_patch PATCH_FILE WORK_DIR PATCH_NAME)
+    if(NOT EXISTS ${PATCH_FILE})
+        message(WARNING "Patch file not found: ${PATCH_FILE}")
+        return()
+    endif()
+    
+    message(STATUS "Applying ${PATCH_NAME} to resid-1.0 build sources")
     execute_process(
         COMMAND patch -p1
         WORKING_DIRECTORY ${WORK_DIR}
@@ -107,14 +110,30 @@ if(EXISTS ${PATCH_FILE})
         ERROR_VARIABLE PATCH_ERROR
         INPUT_FILE ${PATCH_FILE}
     )
-    if(NOT PATCH_RESULT EQUAL 0)
-        message(WARNING "Failed to apply regToCutoff patch:\n${PATCH_ERROR}")
+    if(NOT PATCH_RESULT EQUAL 0 AND NOT PATCH_RESULT EQUAL 1)
+        message(WARNING "Failed to apply ${PATCH_NAME}:\n${PATCH_ERROR}")
     else()
-        message(STATUS "Successfully applied regToCutoff patch")
+        message(STATUS "Successfully applied ${PATCH_NAME}")
     endif()
-else()
-    message(WARNING "Patch file not found: ${PATCH_FILE}")
-endif()
+endfunction()
+
+# Apply patches
+set(RESID_PATCH_DIR ${CMAKE_CURRENT_SOURCE_DIR}/patches)
+set(RESID_WORK_DIR ${CMAKE_CURRENT_BINARY_DIR}/resid-1.0/build-src/vice)
+
+# Apply regToCutoff patch for resid-0.16 compatibility
+apply_patch(
+    ${RESID_PATCH_DIR}/regtocutoff.patch
+    ${RESID_WORK_DIR}
+    "regToCutoff patch"
+)
+
+# Apply filter initialization fix
+apply_patch(
+    ${RESID_PATCH_DIR}/filter-init.patch
+    ${RESID_WORK_DIR}
+    "filter initialization patch"
+)
 
 # Generate .h files from .dat files using samp2src.pl
 foreach(WAVE_FILE ${WAVE_DAT_FILES})

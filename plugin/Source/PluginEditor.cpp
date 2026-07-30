@@ -56,11 +56,62 @@ void SIDAudioProcessorEditor::paint (juce::Graphics& g)
     ProcessorEditor::paint (g);
 }
 
+void SIDAudioProcessorEditor::showAboutInfo()
+{
+    juce::String msg;
+
+    if (sidProc.processorOptions.pluginName.isNotEmpty())
+    {
+        // Add reSID version info
+        juce::String residVer = sidProc.getResidVersion();
+        auto resid = "reSID v" + residVer;
+
+        msg += sidProc.processorOptions.pluginName + " v" + sidProc.processorOptions.pluginVersion + " [" + resid + "]";
+        #if JUCE_DEBUG
+        msg += "\n(" __TIME__ " " __DATE__ ")\n\n";
+        #else
+        msg += "\n(" __DATE__ ")\n\n";
+        #endif
+    }
+
+    msg += sidProc.processorOptions.programmingCredits.joinIntoString (", ");
+
+    msg += "\n";
+    msg += "Copyright " + juce::String (&__DATE__[7]);
+
+    auto w = std::make_shared<gin::PluginAlertWindow> ("---- About ----", msg, juce::AlertWindow::NoIcon, this);
+    w->addButton ("OK", 1, juce::KeyPress (juce::KeyPress::returnKey));
+    w->setLookAndFeel (sidProc.processorOptions.lookAndFeel.get());
+
+    w->runAsync (*this, [w] (int)
+    {
+        w->setVisible (false);
+    });
+}
+
 void SIDAudioProcessorEditor::resized()
 {
     using AP = SIDAudioProcessor;
 
+    // Call parent resized first
     ProcessorEditor::resized();
+
+    // On Wayland/Reaper, the window size can get adjusted incorrectly.
+    // Ensure minimum reasonable size to prevent shrinking to dialog size.
+    int width = getWidth();
+    int height = getHeight();
+    
+    // Minimum reasonable size for this plugin (based on 17x3 grid with cx=56, cy=70)
+    // 17 * 56 + 4 * 2 = 964 width, 3 * 70 + 4 * 2 + 40 = 258 height
+    const int minWidth = 964;
+    const int minHeight = 258;
+    
+    if (width < minWidth || height < minHeight)
+    {
+        // Restore reasonable size
+        setSize (std::max(width, minWidth), std::max(height, minHeight));
+        return; // Skip control layout this time to avoid recursion
+    }
 
     int idx = 0;
     juce::Rectangle<int> rc;

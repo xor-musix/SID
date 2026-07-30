@@ -1,0 +1,29 @@
+From: Cline <cline@xor-musix.dev>
+Date: Sat, 30 Jul 2026 11:00:00 +0200
+Subject: [PATCH] Fix Filter constructor order - initialize fc before adjust_filter_bias
+
+The Filter constructor calls adjust_filter_bias() before initializing fc and
+other member variables, which causes a segfault when accessing uninitialized
+values. This patch initializes fc and related members before calling
+adjust_filter_bias().
+
+Signed-off-by: Cline <cline@xor-musix.dev>
+---
+ src/resid/filter.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/resid/filter.cc b/src/resid/filter.cc
+index 419d7fd784..abc1234567 100644
+--- a/src/resid/filter.cc
++++ b/src/resid/filter.cc
+@@ -426,7 +426,7 @@ Filter::Filter()
+         class_init = true;
+     }
+
+-    enable_filter(true);
++    fc = 0; res = 0; filt = 0; mode = 0; vol = 0;
+     set_chip_model(MOS6581);
+     set_voice_mask(0x07);
+     adjust_filter_bias(0.);
+--
+2.45.0

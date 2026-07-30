@@ -819,3 +819,11 @@ juce::Array<juce::File> SIDAudioProcessor::getFactoryProgramDirectories()
     return { systemResourceRoot().getChildFile ("Presets") };
 }
 
+juce::String SIDAudioProcessor::getResidVersion() const
+{
+#if defined(USE_RESID_1_0)
+    return juce::String(resid1::getResidVersion());
+#else
+    return juce::String("0.16");
+#endif
+}

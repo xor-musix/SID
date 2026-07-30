@@ -121,4 +121,13 @@ namespace resid1
         return sid.regToCutoff(val);
     }
 
+    // resid_version_string is defined in siddefs.h
+    // It's declared as extern "C" const char* resid_version_string in siddefs.h
+    // and defined in version.cc as VERSION macro
+    // Expose it through the resid1 namespace
+    inline const char* getResidVersion()
+    {
+        return resid_version_string;
+    }
+
 } // namespace resid1
