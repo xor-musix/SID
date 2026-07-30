@@ -104,7 +104,7 @@ set_target_properties(${PLUGIN_NAME}_Assets PROPERTIES UNITY_BUILD ON UNITY_BUIL
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Option to use resid-1.0 instead of resid-0.16
-option(USE_RESID_1_0 "Use resid-1.0 instead of resid-0.16" OFF)
+option(USE_RESID_1_0 "Use resid-1.0 instead of resid-0.16" ON)
 
 # Add resid-1.0 library from submodule (only when USE_RESID_1_0 is enabled)
 if (USE_RESID_1_0)

@@ -32,26 +32,13 @@
     constexpr sampling_method SAMPLE_INTERPOLATE = resid1::SAMPLE_INTERPOLATE;
     constexpr sampling_method SAMPLE_RESAMPLE = resid1::SAMPLE_RESAMPLE;
     constexpr sampling_method SAMPLE_RESAMPLE_FASTMEM = resid1::SAMPLE_RESAMPLE_FASTMEM;
-#else
+    #else
     #include "3rdparty/resid-0.16/sid.h"
-    // resid-0.16 uses global namespace - re-export for compatibility
-    using chip_model = ::chip_model;
-    using sampling_method = ::sampling_method;
-    using reg4 = ::reg4;
-    using reg8 = ::reg8;
-    using reg12 = ::reg12;
-    using reg16 = ::reg16;
-    using reg24 = ::reg24;
-    using cycle_count = ::cycle_count;
-    using SID = ::SID;
-    // Enum values as constexpr for backward compatibility
-    constexpr chip_model MOS6581 = ::MOS6581;
-    constexpr chip_model MOS8580 = ::MOS8580;
-    constexpr sampling_method SAMPLE_FAST = ::SAMPLE_FAST;
-    constexpr sampling_method SAMPLE_INTERPOLATE = ::SAMPLE_INTERPOLATE;
-    constexpr sampling_method SAMPLE_RESAMPLE = ::SAMPLE_RESAMPLE;
-    constexpr sampling_method SAMPLE_RESAMPLE_FASTMEM = ::SAMPLE_RESAMPLE_INTERPOLATE;
-#endif
+    // resid-0.16 uses global namespace - types are already available after include
+    // Enum values are already available in global namespace
+    // chip_model enum values: MOS6581, MOS8580
+    // sampling_method enum values: SAMPLE_FAST, SAMPLE_INTERPOLATE, SAMPLE_RESAMPLE, SAMPLE_RESAMPLE_FASTMEM
+    #endif
 
 //==============================================================================
 class SIDAudioProcessor;
