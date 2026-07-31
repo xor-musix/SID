@@ -62,11 +62,11 @@ void SIDAudioProcessorEditor::showAboutInfo()
 
     if (sidProc.processorOptions.pluginName.isNotEmpty())
     {
-        // Add reSID version info
+        // Add reSID version info with engine name
         juce::String residVer = sidProc.getResidVersion();
-        auto resid = "reSID v" + residVer;
+        juce::String residEngine = sidProc.getSidEmulatorName();
 
-        msg += sidProc.processorOptions.pluginName + " v" + sidProc.processorOptions.pluginVersion + " [" + resid + "]";
+        msg += sidProc.processorOptions.pluginName + " v" + sidProc.processorOptions.pluginVersion + " [" + residEngine + " v" + residVer + "]";
         #if JUCE_DEBUG
         msg += "\n(" __TIME__ " " __DATE__ ")\n\n";
         #else

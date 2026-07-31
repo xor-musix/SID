@@ -103,12 +103,93 @@ set_target_properties(${PLUGIN_NAME}_Assets PROPERTIES UNITY_BUILD ON UNITY_BUIL
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Option to use resid-1.0 instead of resid-0.16
-option(USE_RESID_1_0 "Use resid-1.0 instead of resid-0.16" ON)
+# Option to select SID emulator library (mutually exclusive)
+# Options: 0= resid-0.16 (default), 1= resid-1.0, 2= libresidfp
+set(SID_EMULATOR "2" CACHE STRING "SID emulator library to use: 0=resid-0.16 (default), 1=resid-1.0, 2=libresidfp")
 
-# Add resid-1.0 library from submodule (only when USE_RESID_1_0 is enabled)
-if (USE_RESID_1_0)
+# Add SID emulator library based on selection
+if (SID_EMULATOR STREQUAL "1")
+    # resid-1.0 selected
     add_subdirectory(plugin/Source/3rdparty/resid-1.0)
+elseif (SID_EMULATOR STREQUAL "2")
+    # libresidfp selected
+    set(RESIDFP_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-fp/libresidfp/src)
+    set(RESIDFP_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/plugin/Source/3rdparty/resid-fp/generated)
+    
+    # Create the output directory if it doesn't exist
+    file(MAKE_DIRECTORY ${RESIDFP_BUILD_DIR})
+    
+    # Configure siddefs-fp.h from siddefs-fp.h.in with default values
+    set(RESIDFP_BRANCH_HINTS 0)
+    set(HAVE_BUILTIN_EXPECT 1)
+    set(RESIDFP_INLINING 1)
+    set(RESIDFP_INLINE "inline")
+    set(PACKAGE_VERSION "1.1.2")
+    
+    configure_file(
+        ${RESIDFP_SOURCE_DIR}/siddefs-fp.h.in
+        ${RESIDFP_BUILD_DIR}/siddefs-fp.h
+        @ONLY
+    )
+    
+    # Configure sidversion.h from sidversion.h.in with default values
+    set(LIB_MAJOR 1)
+    set(LIB_MINOR 1)
+    set(LIB_LEVEL 2)
+    set(SID_VERSION_STRING "1.1.2")
+    
+    configure_file(
+        ${RESIDFP_SOURCE_DIR}/residfp/sidversion.h.in
+        ${RESIDFP_BUILD_DIR}/sidversion.h
+        @ONLY
+    )
+    
+    # Add the version string macro to sidversion.h
+    file(APPEND ${RESIDFP_BUILD_DIR}/sidversion.h "\n#define SID_VERSION_STRING \"${SID_VERSION_STRING}\"\n")
+    
+    # Copy all libresidfp headers to build directory
+    # This includes SID.h and all its dependencies
+    file(COPY ${RESIDFP_SOURCE_DIR}/
+        DESTINATION ${RESIDFP_BUILD_DIR}
+        FILES_MATCHING PATTERN "*.h"
+        PATTERN "residfp" EXCLUDE
+    )
+    # Copy residfp headers to residfp subdirectory
+    file(COPY ${RESIDFP_SOURCE_DIR}/residfp/residfp.h ${RESIDFP_SOURCE_DIR}/residfp/residfp_defs.h DESTINATION ${RESIDFP_BUILD_DIR}/residfp/)
+    # Copy the generated sidversion.h to residfp directory
+    configure_file(
+        ${RESIDFP_BUILD_DIR}/sidversion.h
+        ${RESIDFP_BUILD_DIR}/residfp/sidversion.h
+        COPYONLY
+    )
+    
+    add_library(resid-fp STATIC
+        ${RESIDFP_SOURCE_DIR}/SID.cpp
+        ${RESIDFP_SOURCE_DIR}/EnvelopeGenerator.cpp
+        ${RESIDFP_SOURCE_DIR}/ExternalFilter.cpp
+        ${RESIDFP_SOURCE_DIR}/Filter.cpp
+        ${RESIDFP_SOURCE_DIR}/Filter6581.cpp
+        ${RESIDFP_SOURCE_DIR}/Filter8580.cpp
+        ${RESIDFP_SOURCE_DIR}/FilterModelConfig.cpp
+        ${RESIDFP_SOURCE_DIR}/FilterModelConfig6581.cpp
+        ${RESIDFP_SOURCE_DIR}/FilterModelConfig8580.cpp
+        ${RESIDFP_SOURCE_DIR}/Integrator6581.cpp
+        ${RESIDFP_SOURCE_DIR}/Integrator8580.cpp
+        ${RESIDFP_SOURCE_DIR}/OpAmp.cpp
+        ${RESIDFP_SOURCE_DIR}/Spline.cpp
+        ${RESIDFP_SOURCE_DIR}/version.cc
+        ${RESIDFP_SOURCE_DIR}/WaveformCalculator.cpp
+        ${RESIDFP_SOURCE_DIR}/WaveformGenerator.cpp
+        ${RESIDFP_SOURCE_DIR}/Dac.cpp
+        ${RESIDFP_SOURCE_DIR}/State.cpp
+        ${RESIDFP_SOURCE_DIR}/residfp/residfp.cpp
+        ${RESIDFP_SOURCE_DIR}/resample/SincResampler.cpp
+    )
+    target_include_directories(resid-fp PUBLIC ${RESIDFP_BUILD_DIR})
+    target_include_directories(resid-fp PUBLIC ${RESIDFP_SOURCE_DIR})
+    target_include_directories(resid-fp PUBLIC ${RESIDFP_SOURCE_DIR}/residfp)
+    target_compile_features(resid-fp PUBLIC cxx_std_17)
+    set_target_properties(resid-fp PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
 juce_set_vst2_sdk_path (${CMAKE_SOURCE_DIR}/modules/plugin_sdk/vstsdk2.4)
@@ -143,10 +224,23 @@ file (GLOB_RECURSE source_files CONFIGURE_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/plugin/*.h)
 
 # Exclude files from resid-1.0 submodule (VICE)
+# Exclude files from libresidfp tests
+# Exclude residfp wrapper files when not using libresidfp
 list(FILTER source_files EXCLUDE REGEX "resid-1.0/vice-git/vice/")
+list(FILTER source_files EXCLUDE REGEX "resid-fp/libresidfp/tests/")
+list(FILTER source_files EXCLUDE REGEX "resid-fp/libresidfp/src/")
+list(FILTER source_files EXCLUDE REGEX "resid-fp/residfp_wrapper\\.cc$")
+list(FILTER source_files EXCLUDE REGEX "resid-fp/residfp_wrapper\\.h$")
 
 target_sources (${PLUGIN_NAME} PRIVATE ${source_files})
 source_group (TREE ${CMAKE_CURRENT_SOURCE_DIR}/plugin PREFIX Source FILES ${source_files})
+
+# Add residfp wrapper source files when libresidfp is selected
+if (SID_EMULATOR STREQUAL "2")
+    target_sources (${PLUGIN_NAME} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-fp/residfp_wrapper.cc
+    )
+endif()
 
 file (GLOB_RECURSE asset_files CONFIGURE_DEPENDS
 	${CMAKE_CURRENT_SOURCE_DIR}/Assets/*)
@@ -181,15 +275,22 @@ target_link_libraries (${PLUGIN_NAME} PRIVATE
     					juce::juce_recommended_config_flags
 					)
 
-# Add resid library (0.16 or 1.0) based on option
-if (USE_RESID_1_0)
+# Add resid library based on selection
+if (SID_EMULATOR STREQUAL "2")
+    # libresidfp selected
+    target_link_libraries (${PLUGIN_NAME} PRIVATE resid-fp)
+    target_compile_definitions (${PLUGIN_NAME} PRIVATE SID_EMULATOR=2)
+    target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-fp)
+    target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-fp/libresidfp/src)
+elseif (SID_EMULATOR STREQUAL "1")
+    # resid-1.0 selected
     target_link_libraries (${PLUGIN_NAME} PRIVATE resid-1.0)
-    target_compile_definitions (${PLUGIN_NAME} PRIVATE USE_RESID_1_0)
+    target_compile_definitions (${PLUGIN_NAME} PRIVATE SID_EMULATOR=1)
     # Add resid-1.0 build source directory FIRST (for patched headers), then generated directory
     target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/plugin/Source/3rdparty/resid-1.0/resid-1.0/build-src/vice/src/resid)
     target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/plugin/Source/3rdparty/resid-1.0/generated)
 else()
-    # resid-0.16 sources are included directly
+    # resid-0.16 sources are included directly (default)
     target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugin/Source/3rdparty/resid-0.16)
 endif()
 

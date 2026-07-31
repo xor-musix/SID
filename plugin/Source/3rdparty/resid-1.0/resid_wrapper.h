@@ -17,7 +17,7 @@
     (which uses namespace reSID) and exposes it as namespace resid1 with
     backward-compatible type aliases and function signatures.
 
-    Usage in PluginProcessor.h (when USE_RESID_1_0 is defined):
+    Usage in PluginProcessor.h (when SID_EMULATOR == 1 is defined):
     @code
     #include "resid_wrapper.h"
     // Re-export types from resid1 namespace for use in plugin code

@@ -821,9 +821,22 @@ juce::Array<juce::File> SIDAudioProcessor::getFactoryProgramDirectories()
 
 juce::String SIDAudioProcessor::getResidVersion() const
 {
-#if defined(USE_RESID_1_0)
+#if SID_EMULATOR == 1
     return juce::String(resid1::getResidVersion());
+#elif SID_EMULATOR == 2
+    return juce::String(residfp::getResidVersion());
 #else
     return juce::String("0.16");
+#endif
+}
+
+juce::String SIDAudioProcessor::getSidEmulatorName() const
+{
+#if SID_EMULATOR == 1
+    return "reSID";
+#elif SID_EMULATOR == 2
+    return "libresidfp";
+#else
+    return "reSID";
 #endif
 }

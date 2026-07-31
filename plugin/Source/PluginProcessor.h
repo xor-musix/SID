@@ -12,8 +12,8 @@
 
 #include <JuceHeader.h>
 
-// Support both resid-0.16 (global namespace) and resid-1.0 (namespace reSID)
-#if defined(USE_RESID_1_0)
+// SID Emulator selection: 0=resid-0.16 (default), 1=resid-1.0, 2=libresidfp
+#if SID_EMULATOR == 1
     #include "3rdparty/resid-1.0/resid_wrapper.h"
     // Re-export types from resid1 namespace for use in plugin code
     using chip_model = resid1::chip_model;
@@ -32,13 +32,32 @@
     constexpr sampling_method SAMPLE_INTERPOLATE = resid1::SAMPLE_INTERPOLATE;
     constexpr sampling_method SAMPLE_RESAMPLE = resid1::SAMPLE_RESAMPLE;
     constexpr sampling_method SAMPLE_RESAMPLE_FASTMEM = resid1::SAMPLE_RESAMPLE_FASTMEM;
-    #else
+#elif SID_EMULATOR == 2
+    #include "3rdparty/resid-fp/residfp_wrapper.h"
+    // Re-export types from residfp namespace for use in plugin code
+    using chip_model = residfp::chip_model;
+    using sampling_method = residfp::sampling_method;
+    using reg4 = residfp::reg4;
+    using reg8 = residfp::reg8;
+    using reg12 = residfp::reg12;
+    using reg16 = residfp::reg16;
+    using reg24 = residfp::reg24;
+    using cycle_count = residfp::cycle_count;
+    using SID = residfp::SID;
+    // Enum values as constexpr for backward compatibility
+    constexpr chip_model MOS6581 = residfp::MOS6581;
+    constexpr chip_model MOS8580 = residfp::MOS8580;
+    constexpr sampling_method SAMPLE_FAST = residfp::SAMPLE_FAST;
+    constexpr sampling_method SAMPLE_INTERPOLATE = residfp::SAMPLE_INTERPOLATE;
+    constexpr sampling_method SAMPLE_RESAMPLE = residfp::SAMPLE_RESAMPLE;
+    constexpr sampling_method SAMPLE_RESAMPLE_FASTMEM = residfp::SAMPLE_RESAMPLE_FASTMEM;
+#else
     #include "3rdparty/resid-0.16/sid.h"
     // resid-0.16 uses global namespace - types are already available after include
     // Enum values are already available in global namespace
     // chip_model enum values: MOS6581, MOS8580
     // sampling_method enum values: SAMPLE_FAST, SAMPLE_INTERPOLATE, SAMPLE_RESAMPLE, SAMPLE_RESAMPLE_FASTMEM
-    #endif
+#endif
 
 //==============================================================================
 class SIDAudioProcessor;
@@ -91,6 +110,9 @@ public:
 
     // Get the reSID version string
     juce::String getResidVersion() const;
+    
+    // Get the SID emulator name
+    juce::String getSidEmulatorName() const;
 
     SIDAudioProcessor();
     ~SIDAudioProcessor() override;
