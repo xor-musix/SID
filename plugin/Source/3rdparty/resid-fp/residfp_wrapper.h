@@ -11,6 +11,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cassert>
 
 /**
     libresidfp namespace wrapper for backward compatibility with resid-0.16 and resid-1.0 APIs.
@@ -70,13 +71,17 @@
     Note: The wrapper maintains the same interface as resid-0.16 for existing code.
 */
 
-// Include path is relative to the generated directory
+// siddefs-fp.h must be included first to define types and version string
+// This file is generated from siddefs-fp.h.in by CMake
 #include "siddefs-fp.h"
-#include "residfp/residfp.h"
-// Include the full definition of reSIDfp::SID
-#include "residfp/residfp_defs.h"
-// Include SID.h which contains the full definition
+
+// Include SID.h first (includes all the reSIDfp headers properly)
+// SID.h includes residfp/residfp_defs.h and siddefs-fp.h internally
 #include "SID.h"
+
+// residfp.h defines the reSIDfp namespace and class declarations
+// It also includes sidversion.h which requires RESIDFP_H to be defined
+// Since SID.h already includes everything we need, we don't need to include residfp.h again
 
 namespace residfp
 {
@@ -108,16 +113,120 @@ namespace residfp
     static constexpr sampling_method SAMPLE_RESAMPLE_FASTMEM = reSIDfp::RESAMPLE;
 
     /**
+        Cutoff frequency lookup tables for MOS6581 and MOS8580.
+        These tables map FC register values (0-2047) to cutoff frequencies in Hz.
+        The tables are taken from resid-0.16 filter.cc.
+    */
+    constexpr int f0_points_6581[][2] =
+    {
+        {    0,   220 },   // 0x00      - repeated end point
+        {    0,   220 },   // 0x00
+        {  128,   230 },   // 0x10
+        {  256,   250 },   // 0x20
+        {  384,   300 },   // 0x30
+        {  512,   420 },   // 0x40
+        {  640,   780 },   // 0x50
+        {  768,  1600 },   // 0x60
+        {  832,  2300 },   // 0x68
+        {  896,  3200 },   // 0x70
+        {  960,  4300 },   // 0x78
+        {  992,  5000 },   // 0x7c
+        { 1008,  5400 },   // 0x7e
+        { 1016,  5700 },   // 0x7f
+        { 1023,  6000 },   // 0x7f 0x07
+        { 1023,  6000 },   // 0x7f 0x07 - discontinuity
+        { 1024,  4600 },   // 0x80      -
+        { 1024,  4600 },   // 0x80
+        { 1032,  4800 },   // 0x81
+        { 1056,  5300 },   // 0x84
+        { 1088,  6000 },   // 0x88
+        { 1120,  6600 },   // 0x8c
+        { 1152,  7200 },   // 0x90
+        { 1280,  9500 },   // 0xa0
+        { 1408, 12000 },   // 0xb0
+        { 1536, 14500 },   // 0xc0
+        { 1664, 16000 },   // 0xd0
+        { 1792, 17100 },   // 0xe0
+        { 1920, 17700 },   // 0xf0
+        { 2047, 18000 },   // 0xff 0x07
+        { 2047, 18000 }    // 0xff 0x07 - repeated end point
+    };
+
+    constexpr int f0_points_8580[][2] =
+    {
+        {    0,     0 },   // 0x00      - repeated end point
+        {    0,     0 },   // 0x00
+        {  128,   800 },   // 0x10
+        {  256,  1600 },   // 0x20
+        {  384,  2500 },   // 0x30
+        {  512,  3300 },   // 0x40
+        {  640,  4100 },   // 0x50
+        {  768,  4800 },   // 0x60
+        {  896,  5600 },   // 0x70
+        { 1024,  6500 },   // 0x80
+        { 1152,  7500 },   // 0x90
+        { 1280,  8400 },   // 0xa0
+        { 1408,  9200 },   // 0xb0
+        { 1536,  9800 },   // 0xc0
+        { 1664, 10500 },   // 0xd0
+        { 1792, 11000 },   // 0xe0
+        { 1920, 11700 },   // 0xf0
+        { 2047, 12500 }    // 0xff 0x07 - repeated end point
+    };
+
+    /**
+        Linear interpolation helper to find cutoff frequency for a given FC value.
+        @param points Array of {FC, frequency} points
+        @param num_points Number of points in the array
+        @param fc_value FC register value (0-2047)
+        @return Cutoff frequency in Hz
+    */
+    inline int interpolate_fc(const int points[][2], int num_points, int fc_value)
+    {
+        if (fc_value <= points[0][0])
+            return points[0][1];
+        if (fc_value >= points[num_points-1][0])
+            return points[num_points-1][1];
+
+        for (int i = 0; i < num_points - 1; i++)
+        {
+            if (fc_value >= points[i][0] && fc_value <= points[i+1][0])
+            {
+                int x0 = points[i][0];
+                int y0 = points[i][1];
+                int x1 = points[i+1][0];
+                int y1 = points[i+1][1];
+                // Linear interpolation
+                return y0 + (y1 - y0) * (fc_value - x0) / (x1 - x0);
+            }
+        }
+        return points[num_points-1][1];
+    }
+
+    /**
         Wrapper class for reSIDfp::SID that matches resid-0.16 API.
+
+        The key difference is the clock() method:
+        - resid-0.16: clock(cycle_count& delta_t, short* buf, int n)
+          Takes a reference to cycles, returns samples produced, modifies delta_t to remaining cycles
+        - libresidfp: clock(int16_t* buf, int bufSize)
+          Returns cycles run, produces up to bufSize samples
+
+        The wrapper implements the resid-0.16 signature by:
+        1. Calling the libresidfp clock(buf, n) which produces up to n samples
+        2. Estimating how many cycles were consumed based on the ratio of samples produced
     */
     class SID
     {
     public:
+        SID() : chip_model_(MOS6581) {}
+
         /**
             Set the chip model (MOS6581 or MOS8580).
         */
         void set_chip_model(chip_model model)
         {
+            chip_model_ = model;
             sid.setChipModel(model);
         }
 
@@ -158,53 +267,52 @@ namespace residfp
             
             @param delta_t Reference to number of cycles to run (modified to remaining cycles)
             @param buf Output buffer for audio samples
-            @param n Number of samples to produce
+            @param n Number of samples to produce (max)
             @return Number of samples produced
         */
         int clock(cycle_count& delta_t, short* buf, int n)
         {
-            // libresidfp's clock returns cycles run for producing samples
-            // We need to run for a given number of cycles and return samples produced
+            // The libresidfp clock(int16_t* buf, int bufSize) produces up to bufSize samples
+            // and returns the number of cycles that were run.
             // 
-            // The approach: since libresidfp doesn't give us direct control over
-            // how many cycles to run, we estimate based on the sampling parameters.
+            // The resid-0.16 clock(cycle_count& delta_t, short* buf, int n) runs for delta_t cycles
+            // and returns the number of samples produced, modifying delta_t to remaining cycles.
             //
+            // To implement resid-0.16 behavior with libresidfp:
+            // 1. First, run digital clocking for delta_t cycles
+            // 2. Then run audio-producing clock for remaining cycles
+            
+            // First, run the digital part (no audio output)
+            sid.clockDigital(delta_t);
+            
+            // Now we need to produce n samples based on how many cycles that represents
             // At 1MHz clock and typical sample rate of 48kHz:
             // - 1022730 cycles per second / 48000 samples per second = ~21.3 cycles per sample
-            // So roughly 21 cycles produce 1 sample
+            // We use a rough estimate of 21 cycles per sample
             
-            int samples_produced = 0;
-            cycle_count cycles_remaining = delta_t;
+            const double CYCLES_PER_SAMPLE = 1022730.0 / 48000.0;  // ~21.3
             
-            while (cycles_remaining > 0 && samples_produced < n)
+            // Estimate how many samples delta_t cycles would produce
+            int estimated_samples = static_cast<int>(delta_t / CYCLES_PER_SAMPLE);
+            
+            // Make sure we don't overflow the buffer
+            int samples_to_produce = std::min(estimated_samples, n);
+            
+            if (samples_to_produce <= 0)
             {
-                // Calculate how many samples this chunk of cycles should produce
-                // Using a rough estimate of 21 cycles per sample (1022730 / 48000)
-                // This is an approximation since we don't have access to the actual sample rate
-                const int CYCLES_PER_SAMPLE_ESTIMATE = 21;
-                int samples_to_produce = cycles_remaining / CYCLES_PER_SAMPLE_ESTIMATE;
-                
-                // Make sure we don't overflow the buffer
-                samples_to_produce = std::min(samples_to_produce, n - samples_produced);
-                
-                // If we can't produce any samples, just run digital
-                if (samples_to_produce <= 0)
-                {
-                    sid.clockDigital(cycles_remaining);
-                    cycles_remaining = 0;
-                    break;
-                }
-                
-                // Run the emulator and get cycles run
-                cycle_count cycles_run = sid.clock(buf + samples_produced, samples_to_produce);
-                
-                // Update remaining cycles (cycles_run are the cycles that were run)
-                cycles_remaining -= cycles_run;
-                samples_produced += samples_to_produce;
+                // If no samples can be produced, return 0 and consume all cycles
+                delta_t = 0;
+                return 0;
             }
             
-            delta_t = cycles_remaining;
-            return samples_produced;
+            // Run audio-producing clock for samples_to_produce samples
+            // This returns the number of cycles that were run
+            int cycles_run = sid.clock(buf, samples_to_produce);
+            
+            // Update remaining cycles
+            delta_t = cycles_run;
+            
+            return samples_to_produce;
         }
 
         /**
@@ -218,27 +326,34 @@ namespace residfp
 
         /**
             Helper method to convert a register value to cutoff frequency.
-            @param val Register value
+            @param val Register value (FC register, 0-2047)
             @return Cutoff frequency in Hz
         */
         int regToCutoff(uint16_t val)
         {
-            // libresidfp doesn't have a direct regToCutoff method
-            // This is a placeholder - the actual implementation would need
-            // to be added to the library or we use a similar calculation
-            return 0;
+            // Linear interpolation between tabulated points
+            if (chip_model_ == MOS6581)
+            {
+                return interpolate_fc(f0_points_6581, 
+                    sizeof(f0_points_6581)/sizeof(*f0_points_6581), val);
+            }
+            else
+            {
+                return interpolate_fc(f0_points_8580,
+                    sizeof(f0_points_8580)/sizeof(*f0_points_8580), val);
+            }
         }
 
     private:
         reSIDfp::SID sid;
+        chip_model chip_model_;
     };
 
-    // Get the libresidfp version string (uses sidversion.h from the library)
-    // Note: sidversion.h cannot be included directly due to #error
-    // The version is defined in the generated sidversion.h as a string literal
+    // Get the libresidfp version string
+    // The version string is defined in siddefs-fp.h
     inline const char* getResidVersion()
     {
-        return SID_VERSION_STRING;
+        return residfp_version_string;
     }
 
 } // namespace residfp
