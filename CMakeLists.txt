@@ -105,7 +105,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Option to select SID emulator library (mutually exclusive)
 # Options: 0= resid-0.16 (default), 1= resid-1.0, 2= libresidfp
-set(SID_EMULATOR "2" CACHE STRING "SID emulator library to use: 0=resid-0.16 (default), 1=resid-1.0, 2=libresidfp")
+set(SID_EMULATOR "0" CACHE STRING "SID emulator library to use: 0=resid-0.16 (default), 1=resid-1.0, 2=libresidfp")
 
 # Add SID emulator library based on selection
 if (SID_EMULATOR STREQUAL "1")
