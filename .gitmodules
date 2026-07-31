@@ -17,3 +17,6 @@
 [submodule "plugin/Source/3rdparty/resid-1.0/vice-git"]
 	path = plugin/Source/3rdparty/resid-1.0/vice-git
 	url = https://github.com/sysfce2/VICE.git
+[submodule "plugin/Source/3rdparty/resid-fp/libresidfp"]
+	path = plugin/Source/3rdparty/resid-fp/libresidfp
+	url = https://github.com/libsidplayfp/libresidfp.git
