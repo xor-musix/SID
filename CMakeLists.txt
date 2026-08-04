@@ -300,6 +300,9 @@ target_include_directories (${PLUGIN_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/S
 
 juce_generate_juce_header (${PLUGIN_NAME})
 
+# Add tests subdirectory
+add_subdirectory(tests)
+
 target_compile_definitions (${PLUGIN_NAME} PRIVATE
 								JUCE_DISPLAY_SPLASH_SCREEN=0
 								JUCE_MODAL_LOOPS_PERMITTED=1

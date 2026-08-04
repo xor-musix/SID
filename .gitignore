@@ -87,3 +87,4 @@ cmake-build-*/vst3_helpers/
 
 # User data and preferences
 xcuserdata
+/test_results/*

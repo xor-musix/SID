@@ -85,6 +85,11 @@ private:
     void updateOscs (int curNote);
     void writeReg (uint8_t reg, uint8_t value);
 
+public:
+    // Test harness access for register writes
+    void testWriteReg(uint8_t reg, uint8_t value) { writeReg(reg, value); }
+
+private:
     SIDAudioProcessor& processor;
 
     int lastNote = -1;
@@ -95,6 +100,9 @@ private:
     SID sid;
 
     std::map<uint8_t, uint8_t> regCache;
+public:
+    // For test harness access
+    const std::map<uint8_t, uint8_t>& getRegCache() const { return regCache; }
 };
 
 //==============================================================================
@@ -173,6 +181,10 @@ public:
     static juce::String paramVoices;
 
     gin::AudioFifo fifo {1, 44100};
+
+    // Test harness accessors for sids array
+    int getNumVoices() const { return sids.size(); }
+    SIDEngine* getVoice(int index) const { return sids[index]; }
 
 private:
     void runUntil (int& done, juce::AudioSampleBuffer& buffer, int pos);
