@@ -89,3 +89,4 @@ cmake-build-*/vst3_helpers/
 xcuserdata
 /test_results/*memory-bank/
 memory-bank/
+.scratch/
